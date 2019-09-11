@@ -22,9 +22,12 @@ public class SecureStorage extends CordovaPlugin {
     private static final String TAG = "SecureStorage";
 
     private static final boolean SUPPORTED = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
-    private static final Integer DEFAULT_AUTHENTICATION_VALIDITY_TIME = 60 * 60 * 24; // Fallback to 24h. Workaround to avoid asking for credentials too "often"
+    private static final Integer DEFAULT_AUTHENTICATION_VALIDITY_TIME = 60 * 60 * 24; // Fallback to 24h. Workaround to
+                                                                                      // avoid asking for credentials
+                                                                                      // too "often"
 
-    private static final String MSG_NOT_SUPPORTED = "API 21 (Android 5.0 Lollipop) is required. This device is running API " + Build.VERSION.SDK_INT;
+    private static final String MSG_NOT_SUPPORTED = "API 21 (Android 5.0 Lollipop) is required. This device is running API "
+            + Build.VERSION.SDK_INT;
     private static final String MSG_DEVICE_NOT_SECURE = "Device is not secure";
     private static final String MSG_KEYS_FAILED = "Generate RSA Encryption Keys failed. ";
 
@@ -60,7 +63,8 @@ public class SecureStorage extends CordovaPlugin {
     }
 
     @Override
-    public boolean execute(String action, CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
+    public boolean execute(String action, CordovaArgs args, final CallbackContext callbackContext)
+            throws JSONException {
         if (!SUPPORTED) {
             Log.w(TAG, MSG_NOT_SUPPORTED);
             callbackContext.error(MSG_NOT_SUPPORTED);
@@ -74,7 +78,8 @@ public class SecureStorage extends CordovaPlugin {
             Context ctx = null;
 
             // Solves #151. By default, we use our own ApplicationContext
-            // If packageName is provided, we try to get the Context of another Application with that packageName
+            // If packageName is provided, we try to get the Context of another Application
+            // with that packageName
             try {
                 ctx = getPackageContext(packageName);
             } catch (Exception e) {
@@ -96,7 +101,8 @@ public class SecureStorage extends CordovaPlugin {
             }
             if (!RSA.encryptionKeysAvailable(alias)) {
                 // Encryption Keys aren't available, proceed to generate them
-                Integer userAuthenticationValidityDuration = options.optInt("userAuthenticationValidityDuration", DEFAULT_AUTHENTICATION_VALIDITY_TIME);
+                Integer userAuthenticationValidityDuration = options.optInt("userAuthenticationValidityDuration",
+                        DEFAULT_AUTHENTICATION_VALIDITY_TIME);
 
                 generateKeysContext = callbackContext;
                 generateEncryptionKeys(userAuthenticationValidityDuration);
@@ -163,8 +169,10 @@ public class SecureStorage extends CordovaPlugin {
             return true;
         }
         if ("secureDevice".equals(action)) {
-            // Open the Security Settings screen. The app developer should inform the user about
-            // the security requirements of the app and initialize again after the user has changed the screen-lock settings
+            // Open the Security Settings screen. The app developer should inform the user
+            // about
+            // the security requirements of the app and initialize again after the user has
+            // changed the screen-lock settings
             secureDeviceContext = callbackContext;
             secureDevice();
             return true;
@@ -215,19 +223,27 @@ public class SecureStorage extends CordovaPlugin {
     }
 
     /**
-     * Create the Confirm Credentials screen.
-     * You can customize the title and description or Android will provide a generic one for you if you leave it null
+     * Create the Confirm Credentials screen. You can customize the title and
+     * description or Android will provide a generic one for you if you leave it
+     * null
      *
      * @param title
-     * @param description
-     * @// TODO: 2019-07-08 Use  BiometricPrompt#setDeviceCredentialAllowed for API 29+
+     * @param description @// TODO: 2019-07-08 Use
+     *                    BiometricPrompt#setDeviceCredentialAllowed for API 29+
      */
     private void unlockCredentials(String title, String description) {
         cordova.getActivity().runOnUiThread(new Runnable() {
             public void run() {
-                KeyguardManager keyguardManager = (KeyguardManager) (getContext().getSystemService(Context.KEYGUARD_SERVICE));
-                Intent intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description);
-                startActivity(intent);
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                    Intent intent = new Intent("com.android.credentials.UNLOCK");
+                    startActivity(intent);
+                } else {
+                    // Only usable for Android API 29+
+                    KeyguardManager keyguardManager = (KeyguardManager) (getContext()
+                            .getSystemService(Context.KEYGUARD_SERVICE));
+                    Intent intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description);
+                    startActivity(intent);
+                }
             }
         });
     }
@@ -235,7 +251,8 @@ public class SecureStorage extends CordovaPlugin {
     /**
      * Generate Encryption Keys in the background.
      *
-     * @param userAuthenticationValidityDuration User authentication validity duration in seconds
+     * @param userAuthenticationValidityDuration User authentication validity
+     *                                           duration in seconds
      */
     private void generateEncryptionKeys(Integer userAuthenticationValidityDuration) {
         if (generateKeysContext != null && !generateKeysContextRunning) {
@@ -244,7 +261,8 @@ public class SecureStorage extends CordovaPlugin {
                     generateKeysContextRunning = true;
                     try {
                         String alias = service2alias(INIT_SERVICE);
-                        //Solves Issue #96. The RSA key may have been deleted by changing the lock type.
+                        // Solves Issue #96. The RSA key may have been deleted by changing the lock
+                        // type.
                         getStorage(INIT_SERVICE).clear();
                         RSA.createKeyPair(getContext(), alias, userAuthenticationValidityDuration);
                         generateKeysContext.success();
