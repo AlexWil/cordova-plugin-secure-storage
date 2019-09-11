@@ -234,16 +234,10 @@ public class SecureStorage extends CordovaPlugin {
     private void unlockCredentials(String title, String description) {
         cordova.getActivity().runOnUiThread(new Runnable() {
             public void run() {
-                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                    Intent intent = new Intent("com.android.credentials.UNLOCK");
-                    startActivity(intent);
-                } else {
-                    // Only usable for Android API 29+
-                    KeyguardManager keyguardManager = (KeyguardManager) (getContext()
-                            .getSystemService(Context.KEYGUARD_SERVICE));
-                    Intent intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description);
-                    startActivity(intent);
-                }
+                KeyguardManager keyguardManager = (KeyguardManager) (getContext()
+                        .getSystemService(Context.KEYGUARD_SERVICE));
+                Intent intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description);
+                startActivity(intent);
             }
         });
     }
@@ -284,13 +278,21 @@ public class SecureStorage extends CordovaPlugin {
     private void secureDevice() {
         cordova.getActivity().runOnUiThread(new Runnable() {
             public void run() {
-                try {
-                    Intent intent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
+
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                    Intent intent = new Intent("com.android.credentials.UNLOCK");
                     startActivity(intent);
-                } catch (Exception e) {
-                    Log.e(TAG, "Error opening Security settings to secure device : ", e);
-                    secureDeviceContext.error(e.getMessage());
+                } else {
+                    // Only usable for Android API 29+
+                    try {
+                        Intent intent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error opening Security settings to secure device : ", e);
+                        secureDeviceContext.error(e.getMessage());
+                    }
                 }
+
             }
         });
     }
