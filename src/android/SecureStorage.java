@@ -234,7 +234,7 @@ public class SecureStorage extends CordovaPlugin {
     private void unlockCredentials(String title, String description) {
         cordova.getActivity().runOnUiThread(new Runnable() {
             public void run() {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                     Intent intent = new Intent("com.android.credentials.UNLOCK");
                     startActivity(intent);
                 } else {
